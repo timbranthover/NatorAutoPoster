@@ -4,3 +4,7 @@ outputs/*.json
 tmp/*
 logs/*
 .DS_Store
+data/nator.db
+data/nator.db-wal
+data/nator.db-shm
+outputs/
