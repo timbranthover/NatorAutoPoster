@@ -4,19 +4,26 @@ import { MockTtsProvider } from './mock-tts.js';
 import { MockRendererProvider } from './mock-renderer.js';
 import { MockStorageProvider } from './mock-storage.js';
 import { MockPublisherProvider } from './mock-publisher.js';
+import { InstagramGraphPublisher } from './instagram-graph.js';
+import { R2StorageProvider } from './r2-storage.js';
+import { TunnelStorageProvider } from './tunnel-storage.js';
+import { FfmpegRendererProvider } from './ffmpeg-renderer.js';
 
 export function registerAllProviders() {
-  // Mock providers (always available)
+  // Mock providers (always available, zero dependencies)
   register('script', 'mock', MockScriptProvider);
   register('tts', 'mock', MockTtsProvider);
   register('renderer', 'mock', MockRendererProvider);
   register('storage', 'mock', MockStorageProvider);
   register('publisher', 'mock', MockPublisherProvider);
 
-  // Real providers will be registered here as they're implemented:
-  // register('storage', 'tunnel', TunnelStorageProvider);
-  // register('storage', 'r2', R2StorageProvider);
-  // register('publisher', 'instagram', InstagramGraphPublisher);
+  // Real providers
+  register('storage', 'tunnel', TunnelStorageProvider);
+  register('storage', 'r2', R2StorageProvider);
+  register('publisher', 'instagram', InstagramGraphPublisher);
+  register('renderer', 'ffmpeg', FfmpegRendererProvider);
+
+  // Future providers:
   // register('tts', 'edge', EdgeTtsProvider);
-  // register('renderer', 'ffmpeg', FfmpegRendererProvider);
+  // register('script', 'openai', OpenAIScriptProvider);
 }
