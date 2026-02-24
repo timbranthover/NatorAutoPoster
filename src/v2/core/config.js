@@ -12,6 +12,7 @@ const DEFAULTS = {
   'scheduler.timezone': 'UTC',
   'scheduler.cron': '0 9-11 * * 1-5',
   'provider.tts': 'mock',
+  'tts.voice': 'en-US-JennyNeural',
   'provider.storage': 'mock',
   'provider.publisher': 'mock',
   'tunnel.enabled': 'true',

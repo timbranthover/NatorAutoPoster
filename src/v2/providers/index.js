@@ -8,6 +8,7 @@ import { InstagramGraphPublisher } from './instagram-graph.js';
 import { R2StorageProvider } from './r2-storage.js';
 import { TunnelStorageProvider } from './tunnel-storage.js';
 import { FfmpegRendererProvider } from './ffmpeg-renderer.js';
+import { EdgeTtsProvider } from './edge-tts.js';
 
 export function registerAllProviders() {
   // Mock providers (always available, zero dependencies)
@@ -23,7 +24,8 @@ export function registerAllProviders() {
   register('publisher', 'instagram', InstagramGraphPublisher);
   register('renderer', 'ffmpeg', FfmpegRendererProvider);
 
+  register('tts', 'edge', EdgeTtsProvider);
+
   // Future providers:
-  // register('tts', 'edge', EdgeTtsProvider);
   // register('script', 'openai', OpenAIScriptProvider);
 }

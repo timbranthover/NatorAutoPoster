@@ -44,7 +44,7 @@ Each step persists to SQLite before moving on. A failed job records `lastGoodSta
 | Type | Mock (default) | Free | Paid |
 |---|---|---|---|
 | `script` | `mock` | *(template/AI next)* | — |
-| `tts` | `mock` | *(edge-tts next)* | — |
+| `tts` | `mock` | `edge` (Edge TTS, needs internet) | — |
 | `renderer` | `mock` | `ffmpeg` | — |
 | `storage` | `mock` | `tunnel` (cloudflared) | `r2` |
 | `publisher` | `mock` | — | `instagram` |
@@ -59,14 +59,15 @@ node src/v2/cli/nator.js config provider.renderer ffmpeg
 ## Going Live Checklist
 
 1. `nator doctor` — all green
-2. `nator config provider.renderer ffmpeg` — real video rendering
-3. Set IG credentials in `.env.local` (`IG_ACCESS_TOKEN`, `IG_IG_USER_ID`)
-4. `nator config provider.publisher instagram`
-5. Choose storage: `tunnel` (free, temporary) or `r2` (permanent)
-6. `nator config pipeline.publish_mode live`
-7. Run a test: `nator run`
-8. Watch the job walk all states: `nator status`
-9. Enable scheduler: `nator config scheduler.enabled true` then `nator schedule`
+2. `nator config provider.tts edge` — real voice-over (Microsoft Edge TTS)
+3. `nator config provider.renderer ffmpeg` — real video rendering
+4. Set IG credentials in `.env.local` (`IG_ACCESS_TOKEN`, `IG_IG_USER_ID`)
+5. `nator config provider.publisher instagram`
+6. Choose storage: `tunnel` (free, temporary) or `r2` (permanent)
+7. `nator config pipeline.publish_mode live`
+8. Run a test: `nator run`
+9. Watch the job walk all states: `nator status`
+10. Enable scheduler: `nator config scheduler.enabled true` then `nator schedule`
 
 ## Safety Gates
 
@@ -100,8 +101,7 @@ PIPELINE_ENGINE=alt
 
 ## What's Next to Build
 
-1. **TTS** — edge-tts (free, offline) or ElevenLabs provider
-2. **Script generation** — template engine or GPT-4o-mini for captions/hooks
+1. **Script generation** — template engine or GPT-4o-mini for captions/hooks
 3. **Duplicate detection** — content hash gate before queuing
 4. **Token refresh** — IG long-lived token rotation before 60-day expiry
 5. **Publish window enforcement** — time-of-day gate layered into scheduler
