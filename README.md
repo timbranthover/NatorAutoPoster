@@ -1,55 +1,116 @@
-# NatorAutoPoster (Local-First Scaffold)
+# NatorAutoPoster — V2 State Machine Pipeline
 
-This repository currently ships a **CLI-first setup wizard + dry-run pipeline** so development can continue before external credentials are available.
+Local-first Instagram Reels auto-poster. V2 is now main. Uses a state machine pipeline, SQLite, and a provider registry so mock → real is a one-line config change.
 
-## Quick start
+## Quick Start
 
 ```bash
-npm run setup:init
-npm run setup:seed
-npm run doctor
-npm run setup:wizard
-npm run pipeline:dryrun
+npm install
+node src/v2/cli/nator.js setup
+node src/v2/cli/nator.js doctor
+node src/v2/cli/nator.js ingest <your-clip.mp4>
+node src/v2/cli/nator.js run
 ```
 
-## Running Setup Status Table
+## CLI Commands
 
-| Area | Status | Notes |
-|---|---|---|
-| Environment / local tools | IN PROGRESS | Node/npm checks scripted via `npm run doctor`. |
-| FFmpeg | IN PROGRESS | Verified with `npm run doctor:ffmpeg`. |
-| Node/npm | DONE | Automated check implemented in `doctor`. |
-| Python (if needed) | NOT STARTED | Not required in current scaffold. |
-| Cloudflare R2 | BLOCKED | Waiting for real credentials + SDK wiring. |
-| Meta Developer App | BLOCKED | Requires manual setup in Meta portal. |
-| Instagram account + account type | BLOCKED | Requires manual account + Creator/Business mode. |
-| Instagram Graph API token / IG User ID | BLOCKED | Needs Meta app + generated token. |
-| App env vars | IN PROGRESS | `.env.example` + `.env.local.example` provided. |
-| Dry-run pipeline verification | DONE | `npm run pipeline:dryrun` writes payload JSON. |
-| Live publish verification | NOT STARTED | Blocked until R2 + IG checks pass. |
+```
+nator setup              — Init database and seed defaults
+nator doctor             — Health check (tools, folders, credentials)
+nator ingest <file>      — Register a source clip
+nator run                — Process next job through full pipeline
+nator run --watch        — Continuously process jobs as they arrive
+nator retry <job-id>     — Resume a failed job from its last good state
+nator status             — Pipeline summary (counts by state)
+nator jobs [state]       — List jobs, optionally filtered by state
+nator clips [status]     — List ingested clips
+nator config [key] [val] — Read or write config (no args = show all)
+nator providers          — List available providers, active shown in [brackets]
+nator schedule           — Start cron scheduler
+nator migrate-v1         — Import clips + settings from V1 JSON DB
+```
 
-## Available scripts
+## Pipeline States
 
-- `npm run doctor` - consolidated health check.
-- `npm run doctor:r2` - validates R2 vars and prepares upload probe file.
-- `npm run doctor:ig` - validates IG vars for safe check mode.
-- `npm run doctor:ffmpeg` - ffmpeg/ffprobe presence check.
-- `npm run setup:init` - creates folders, env local, and db file.
-- `npm run setup:seed` - seeds config defaults.
-- `npm run setup:wizard` - setup status wizard with fix commands.
-- `npm run pipeline:dryrun` - runs complete mock payload generation.
-- `npm run pipeline:test-live` - guarded live publish stub.
+```
+PENDING → SCRIPTING → TTS → RENDERING → UPLOADING → PUBLISHING → DONE
+                                                                 ↘ FAILED (resumable)
+```
 
-## Safety gates before going live
+Each step persists to SQLite before moving on. A failed job records `lastGoodState` — retry resumes from exactly where it left off.
 
-1. 3+ successful `npm run pipeline:dryrun` runs.
-2. `npm run doctor:r2` passes with real upload test.
-3. `npm run doctor:ig` passes with token/account sanity call.
-4. One successful controlled live test publish.
-5. Kill switch path configured and tested.
-6. Max posts/day <= 5.
-7. Publish windows configured.
-8. Duplicate detection enabled.
-9. Dry-run to live switch explicitly confirmed.
+## Providers (Swap with One Config Line)
 
-See `SETUP_STATUS.md` and `docs/setup/*` for detailed operating steps.
+| Type | Mock (default) | Free | Paid |
+|---|---|---|---|
+| `script` | `mock` | *(template/AI next)* | — |
+| `tts` | `mock` | *(edge-tts next)* | — |
+| `renderer` | `mock` | `ffmpeg` | — |
+| `storage` | `mock` | `tunnel` (cloudflared) | `r2` |
+| `publisher` | `mock` | — | `instagram` |
+
+Switch provider:
+```bash
+node src/v2/cli/nator.js config provider.storage tunnel
+node src/v2/cli/nator.js config provider.publisher instagram
+node src/v2/cli/nator.js config provider.renderer ffmpeg
+```
+
+## Going Live Checklist
+
+1. `nator doctor` — all green
+2. `nator config provider.renderer ffmpeg` — real video rendering
+3. Set IG credentials in `.env.local` (`IG_ACCESS_TOKEN`, `IG_IG_USER_ID`)
+4. `nator config provider.publisher instagram`
+5. Choose storage: `tunnel` (free, temporary) or `r2` (permanent)
+6. `nator config pipeline.publish_mode live`
+7. Run a test: `nator run`
+8. Watch the job walk all states: `nator status`
+9. Enable scheduler: `nator config scheduler.enabled true` then `nator schedule`
+
+## Safety Gates
+
+- `PUBLISH_MODE=dry` (default) — writes JSON payloads, never calls IG API
+- `MAX_POSTS_PER_DAY=3` — hard cap enforced before every publish step
+- Kill switch: `touch ./tmp/KILL_SWITCH` — pipeline refuses to run until removed
+- Scheduler only fires inside configured cron windows
+
+## Environment Variables
+
+Copy `.env.local.example` to `.env.local` and fill in:
+
+```env
+# Required for live publishing
+IG_ACCESS_TOKEN=
+IG_IG_USER_ID=
+
+# Required for R2 storage (optional — use tunnel instead)
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=
+R2_PUBLIC_BASE_URL=
+
+# Switch from dry to live when ready
+PUBLISH_MODE=dry
+
+# Override pipeline engine (v1 keeps old script chain)
+PIPELINE_ENGINE=alt
+```
+
+## What's Next to Build
+
+1. **TTS** — edge-tts (free, offline) or ElevenLabs provider
+2. **Script generation** — template engine or GPT-4o-mini for captions/hooks
+3. **Duplicate detection** — content hash gate before queuing
+4. **Token refresh** — IG long-lived token rotation before 60-day expiry
+5. **Publish window enforcement** — time-of-day gate layered into scheduler
+
+## V1 Preserved
+
+Original V1 scripts are still in `scripts/` and `src/lib/`. Run V1:
+```bash
+PIPELINE_ENGINE=v1 node scripts/pipeline-run.js
+```
+
+See `docs/review/` for the full V1 audit, V2 plan, and V1 vs V2 comparison.
