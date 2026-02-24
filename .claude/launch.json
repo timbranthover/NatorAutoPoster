@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "nator-dashboard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["src/v2/ui/server.js"],
+      "port": 3000
+    },
+    {
+      "name": "nator-watch",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["src/v2/cli/nator.js", "run", "--watch"],
+      "port": 3001
+    },
+    {
+      "name": "nator-scheduler",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["src/v2/cli/nator.js", "schedule"],
+      "port": 3002
+    }
+  ]
+}
