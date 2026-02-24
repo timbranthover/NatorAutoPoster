@@ -13,6 +13,15 @@
     "pipeline:dryrun": "node scripts/pipeline-dryrun.js",
     "pipeline:test-live": "node scripts/pipeline-test-live.js",
     "setup:wizard": "node scripts/setup-wizard.js",
-    "clip:ingest": "node scripts/clip-ingest.js"
+    "clip:ingest": "node scripts/clip-ingest.js",
+    "nator": "node src/v2/cli/nator.js",
+    "v2:setup": "node src/v2/cli/nator.js setup",
+    "v2:doctor": "node src/v2/cli/nator.js doctor",
+    "v2:run": "node src/v2/cli/nator.js run",
+    "v2:status": "node src/v2/cli/nator.js status"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "node-cron": "^4.2.1"
   }
 }
