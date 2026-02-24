@@ -10,6 +10,8 @@ import { createJob, listJobs, getJob, nextPendingJob, retryJob, getJobRuns } fro
 import { runJob } from '../core/pipeline.js';
 import { STATES } from '../core/states.js';
 import { listAllProviders } from '../core/registry.js';
+import { startScheduler } from '../core/scheduler.js';
+import { migrateFromV1 } from '../core/migrate-v1.js';
 
 // Bootstrap
 loadEnvFile();
@@ -29,6 +31,8 @@ const COMMANDS = {
   clips: cmdClips,
   config: cmdConfig,
   providers: cmdProviders,
+  schedule: cmdSchedule,
+  'migrate-v1': cmdMigrateV1,
   help: cmdHelp,
 };
 
@@ -72,6 +76,8 @@ Commands:
   clips [status]     List clips (optionally filter by status)
   config [key] [val] Get/set config (no args = show all)
   providers          List registered providers
+  schedule           Start cron scheduler
+  migrate-v1         Import clips and settings from V1 JSON DB
   help               Show this help
 `.trim());
 }
@@ -231,6 +237,21 @@ function cmdProviders() {
     const active = config.get(`provider.${type}`) || 'mock';
     console.log(`  ${type}: ${names.map(n => n === active ? `[${n}]` : n).join(', ')}`);
   }
+}
+
+function cmdSchedule() {
+  startScheduler();
+  // Keep process alive
+  process.on('SIGINT', () => {
+    console.log('\nShutting down scheduler...');
+    closeDb();
+    process.exit(0);
+  });
+}
+
+function cmdMigrateV1() {
+  const result = migrateFromV1();
+  console.log(`Migration complete: ${result.clips} clips, ${result.settings} settings.`);
 }
 
 function timeSince(isoStr) {
