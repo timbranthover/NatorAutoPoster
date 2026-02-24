@@ -1,0 +1,18 @@
+{
+  "name": "nator-auto-poster",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "doctor": "node scripts/doctor.js",
+    "doctor:r2": "node scripts/doctor-r2.js",
+    "doctor:ig": "node scripts/doctor-ig.js",
+    "doctor:ffmpeg": "node scripts/doctor-ffmpeg.js",
+    "setup:init": "node scripts/setup-init.js",
+    "setup:seed": "node scripts/setup-seed.js",
+    "pipeline:dryrun": "node scripts/pipeline-dryrun.js",
+    "pipeline:test-live": "node scripts/pipeline-test-live.js",
+    "setup:wizard": "node scripts/setup-wizard.js",
+    "clip:ingest": "node scripts/clip-ingest.js"
+  }
+}
