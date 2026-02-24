@@ -107,19 +107,72 @@ app.post('/api/clips/ingest', upload.single('clip'), async (req, res) => {
 app.post('/api/run', async (req, res) => {
   try {
     let job = nextPendingJob();
-    const { clipId } = req.body;
+    const { clipId, scriptText } = req.body;
     if (!job) {
       const clip = clipId
         ? listClips({ limit: 1000 }).find(c => c.id === clipId)
         : nextAvailableClip();
       if (!clip) return res.status(400).json({ error: 'No pending jobs or available clips' });
-      job = createJob({ clipId: clip.id });
+      job = createJob({ clipId: clip.id, scriptText: scriptText || null });
     }
     // Run async, return immediately with job id
     res.json({ jobId: job.id, state: job.state });
     runJob(job.id).catch(err => console.error('[dashboard] Run error:', err.message));
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// Stream a rendered video for an in-browser preview
+app.get('/api/jobs/:id/video', (req, res) => {
+  const job = getJob(req.params.id);
+  if (!job || !job.rendered_video_path) return res.status(404).json({ error: 'No video for this job' });
+  const filePath = path.resolve(job.rendered_video_path);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Video file not found on disk' });
+
+  const stat = fs.statSync(filePath);
+  const range = req.headers.range;
+  if (range) {
+    const [startStr, endStr] = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(startStr, 10);
+    const end = endStr ? parseInt(endStr, 10) : stat.size - 1;
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': end - start + 1,
+      'Content-Type': 'video/mp4',
+    });
+    fs.createReadStream(filePath, { start, end }).pipe(res);
+  } else {
+    res.writeHead(200, { 'Content-Length': stat.size, 'Content-Type': 'video/mp4' });
+    fs.createReadStream(filePath).pipe(res);
+  }
+});
+
+// Stream a raw clip file for in-browser preview
+app.get('/api/clips/:id/preview', (req, res) => {
+  const clips = listClips({ limit: 1000 });
+  const clip = clips.find(c => c.id === req.params.id);
+  if (!clip || !clip.file_path) return res.status(404).json({ error: 'Clip not found' });
+  const filePath = path.resolve(clip.file_path);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Clip file not found on disk' });
+
+  const stat = fs.statSync(filePath);
+  const range = req.headers.range;
+  if (range) {
+    const [startStr, endStr] = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(startStr, 10);
+    const end = endStr ? parseInt(endStr, 10) : stat.size - 1;
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': end - start + 1,
+      'Content-Type': 'video/mp4',
+    });
+    fs.createReadStream(filePath, { start, end }).pipe(res);
+  } else {
+    res.writeHead(200, { 'Content-Length': stat.size, 'Content-Type': 'video/mp4' });
+    fs.createReadStream(filePath).pipe(res);
   }
 });
 

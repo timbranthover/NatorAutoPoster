@@ -126,6 +126,16 @@ async function executeStep(state, ctx) {
 }
 
 async function executeScripting(ctx) {
+  // If script was pre-provided (entered in dashboard), skip the script provider entirely
+  if (ctx.scriptText) {
+    const caption = ctx.scriptText.slice(0, 100).replace(/\s+/g, ' ').trim();
+    return {
+      provider: 'manual',
+      context: { scriptText: ctx.scriptText, caption },
+      updates: { scriptText: ctx.scriptText, caption },
+    };
+  }
+
   const provider = resolve('script');
   const result = await provider.generate(ctx.clipPath);
   const caption = result.text.slice(0, 100) + ' ' + (result.hashtags || []).join(' ');

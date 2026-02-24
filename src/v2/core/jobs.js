@@ -1,13 +1,13 @@
 import { getDb } from './db.js';
 import { STATES, canTransition } from './states.js';
 
-export function createJob({ clipId, caption }) {
+export function createJob({ clipId, caption, scriptText }) {
   const db = getDb();
   const id = `job-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   db.prepare(`
-    INSERT INTO jobs (id, clip_id, state, caption, created_at, updated_at)
-    VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
-  `).run(id, clipId || null, STATES.PENDING, caption || '');
+    INSERT INTO jobs (id, clip_id, state, caption, script_text, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+  `).run(id, clipId || null, STATES.PENDING, caption || '', scriptText || null);
   return getJob(id);
 }
 
